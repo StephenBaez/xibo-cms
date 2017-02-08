@@ -369,22 +369,12 @@ class DisplayProfile implements \JsonSerializable
                             array('id' => 1800, 'value' => __('30 minutes')),
                             array('id' => 3600, 'value' => __('1 hour')),
                             array('id' => 14400, 'value' => __('4 hours')),
-                            array('id' => 43200, 'value' => __('12 hours'))
+                            array('id' => 43200, 'value' => __('12 hours')),
+                            array('id' => 86400, 'value' => __('24 hours'))
                         ),
                         'default' => 900,
                         'helpText' => __('How often should the Player check for new content.'),
                         'validation' => 'numeric',
-                        'enabled' => true,
-                        'groupClass' => NULL
-                    ),
-                    array(
-                        'name' => 'DisplayTimeZone',
-                        'tabId' => 'general',
-                        'title' => __('Display Timezone'),
-                        'type' => 'string',
-                        'fieldType' => 'timezone',
-                        'default' => '',
-                        'helpText' => __('The timezone for this display, or empty to use the CMS timezone'),
                         'enabled' => true,
                         'groupClass' => NULL
                     ),
@@ -755,22 +745,12 @@ class DisplayProfile implements \JsonSerializable
                             array('id' => 1800, 'value' => __('30 minutes')),
                             array('id' => 3600, 'value' => __('1 hour')),
                             array('id' => 14400, 'value' => __('4 hours')),
-                            array('id' => 43200, 'value' => __('12 hours'))
+                            array('id' => 43200, 'value' => __('12 hours')),
+                            array('id' => 86400, 'value' => __('24 hours'))
                         ),
                         'default' => 300,
                         'helpText' => __('How often should the Player check for new content.'),
                         'validation' => 'numeric',
-                        'enabled' => true,
-                        'groupClass' => NULL
-                    ),
-                    array(
-                        'name' => 'displayTimeZone',
-                        'tabId' => 'general',
-                        'title' => __('Display Timezone'),
-                        'type' => 'string',
-                        'fieldType' => 'timezone',
-                        'default' => '',
-                        'helpText' => __('The timezone for this display, or empty to use the CMS timezone'),
                         'enabled' => true,
                         'groupClass' => NULL
                     ),

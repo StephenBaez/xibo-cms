@@ -176,6 +176,7 @@ CREATE TABLE IF NOT EXISTS `display` (
   `xmrPubKey` text,
   `lastCommandSuccess` tinyint(4) NOT NULL DEFAULT '2',
   `deviceName` VARCHAR(254) DEFAULT NULL,
+  `timeZone` VARCHAR(254) DEFAULT NULL,
   PRIMARY KEY (`displayid`),
   KEY `defaultplaylistid` (`defaultlayoutid`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
@@ -763,6 +764,7 @@ CREATE TABLE IF NOT EXISTS `resolution` (
   `intended_height` smallint(6) NOT NULL,
   `version` tinyint(4) NOT NULL DEFAULT '1',
   `enabled` tinyint(4) NOT NULL DEFAULT '1',
+  `userId` tinyint(4) NOT NULL,
   PRIMARY KEY (`resolutionID`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COMMENT='Supported Resolutions' AUTO_INCREMENT=1 ;
 
@@ -788,6 +790,7 @@ CREATE TABLE IF NOT EXISTS `schedule` (
   `dayPartId` int(11) NOT NULL DEFAULT '0',
   `recurrenceRepeatsOn` VARCHAR(14) NULL,
   `lastRecurrenceWatermark` BIGINT(20) NULL,
+  `syncTimezone` tinyint(4) NOT NULL DEFAULT '0',
   PRIMARY KEY (`eventID`),
   KEY `layoutID` (`CampaignID`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COMMENT='High level schedule information' AUTO_INCREMENT=1 ;

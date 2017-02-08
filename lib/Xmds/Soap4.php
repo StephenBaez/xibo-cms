@@ -108,15 +108,6 @@ class Soap4 extends Soap
                 // Create the XML nodes
                 foreach ($settings as $arrayItem) {
 
-                    // Append Local Time to the root element
-                    if (strtolower($arrayItem['name']) == 'displaytimezone' && $arrayItem['value'] != '') {
-                        // Calculate local time
-                        $dateNow->timezone($arrayItem['value']);
-
-                        // Append Local Time
-                        $displayElement->setAttribute('localDate', $this->getDate()->getLocalDate($dateNow));
-                    }
-
                     $node = $return->createElement($arrayItem['name'], (isset($arrayItem['value']) ? $arrayItem['value'] : $arrayItem['default']));
                     $node->setAttribute('type', $arrayItem['type']);
                     $displayElement->appendChild($node);
@@ -132,6 +123,19 @@ class Soap4 extends Soap
                 $node = $return->createElement($nodeName, $display->screenShotRequested);
                 $node->setAttribute('type', 'checkbox');
                 $displayElement->appendChild($node);
+
+                $nodeName = ($clientType == 'windows') ? 'DisplayTimeZone' : 'displayTimeZone';
+                $node = $return->createElement($nodeName, (!empty($display->timeZone)) ? $display->timeZone : '');
+                $node->setAttribute('type', 'string');
+                $displayElement->appendChild($node);
+
+                if (!empty($display->timeZone)) {
+                    // Calculate local time
+                    $dateNow->timezone($display->timeZone);
+
+                    // Append Local Time
+                    $displayElement->setAttribute('localDate', $this->getDate()->getLocalDate($dateNow));
+                }
 
                 // Send Notification if required
                 $this->alertDisplayUp();
@@ -415,6 +419,18 @@ class Soap4 extends Soap
         $this->display->storageTotalSpace = $this->getSanitizer()->getInt('totalSpace', $this->display->storageTotalSpace, $status);
         $this->display->lastCommandSuccess = $this->getSanitizer()->getCheckbox('lastCommandSuccess', $this->display->lastCommandSuccess, $status);
         $this->display->deviceName = $this->getSanitizer()->getString('deviceName', $this->display->deviceName, $status);
+
+        // Timezone
+        $timeZone = $this->getSanitizer()->getString('timeZone', $status);
+
+        if (!empty($timeZone)) {
+            // Validate the provided data and log/ignore if not well formatted
+            if (array_key_exists($timeZone, $this->getDate()->timezoneList())) {
+                $this->display->timeZone = $timeZone;
+            } else {
+                $this->getLog()->info('Ignoring Incorrect timezone string: ' . $timeZone);
+            }
+        }
 
         // Touch the display record
         $this->display->save(Display::$saveOptionsMinimum);

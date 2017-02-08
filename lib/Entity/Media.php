@@ -29,11 +29,13 @@ use Xibo\Exception\DuplicateEntityException;
 use Xibo\Exception\InvalidArgumentException;
 use Xibo\Exception\NotFoundException;
 use Xibo\Exception\XiboException;
+use Xibo\Factory\DisplayFactory;
 use Xibo\Factory\DisplayGroupFactory;
 use Xibo\Factory\LayoutFactory;
 use Xibo\Factory\MediaFactory;
 use Xibo\Factory\PermissionFactory;
 use Xibo\Factory\PlaylistFactory;
+use Xibo\Factory\ScheduleFactory;
 use Xibo\Factory\TagFactory;
 use Xibo\Factory\WidgetFactory;
 use Xibo\Service\ConfigServiceInterface;
@@ -227,6 +229,12 @@ class Media implements \JsonSerializable
      */
     private $playlistFactory;
 
+    /** @var  DisplayFactory */
+    private $displayFactory;
+
+    /** @var  ScheduleFactory */
+    private $scheduleFactory;
+
     /**
      * Entity constructor.
      * @param StorageServiceInterface $store
@@ -253,13 +261,17 @@ class Media implements \JsonSerializable
      * @param LayoutFactory $layoutFactory
      * @param WidgetFactory $widgetFactory
      * @param DisplayGroupFactory $displayGroupFactory
+     * @param DisplayFactory $displayFactory
+     * @param ScheduleFactory $scheduleFactory
      * @return $this
      */
-    public function setChildObjectDependencies($layoutFactory, $widgetFactory, $displayGroupFactory)
+    public function setChildObjectDependencies($layoutFactory, $widgetFactory, $displayGroupFactory, $displayFactory, $scheduleFactory)
     {
         $this->layoutFactory = $layoutFactory;
         $this->widgetFactory = $widgetFactory;
         $this->displayGroupFactory  = $displayGroupFactory;
+        $this->displayFactory = $displayFactory;
+        $this->scheduleFactory = $scheduleFactory;
         return $this;
     }
 
@@ -498,7 +510,7 @@ class Media implements \JsonSerializable
 
             // If the media file is invalid, then force an update (only applies to module files)
             $expires = $this->getOriginalValue('expires');
-            $this->isSaveRequired = ($this->valid == 0 || ($expires > 0 && $expires < time()));
+            $this->isSaveRequired = ($this->isSaveRequired || $this->valid == 0 || ($expires > 0 && $expires < time()));
         }
 
         if ($options['deferred']) {
@@ -609,6 +621,7 @@ class Media implements \JsonSerializable
 
         foreach ($this->displayGroups as $displayGroup) {
             /* @var \Xibo\Entity\DisplayGroup $displayGroup */
+            $displayGroup->setChildObjectDependencies($this->displayFactory, $this->layoutFactory, $this->mediaFactory, $this->scheduleFactory);
             $displayGroup->unassignMedia($this);
 
             if ($parentMedia != null)
@@ -705,13 +718,20 @@ class Media implements \JsonSerializable
         $libraryFolder = $this->config->GetSetting('LIBRARY_LOCATION');
 
         // Work out the extension
-        $extension = strtolower(substr(strrchr($this->fileName, '.'), 1));
+        $lastPeriod = strrchr($this->fileName, '.');
+
+        // Determine the save name
+        if ($lastPeriod === false) {
+            $saveName = $this->mediaId;
+        } else {
+            $saveName = $this->mediaId . '.' . strtolower(substr($lastPeriod, 1));
+        }
 
         $this->getLog()->debug('saveFile for "%s" with storedAs = "%s", fileName = "%s" to "%s". Always Copy = "%s", Cloned = "%s"',
             $this->name,
             $this->storedAs,
             $this->fileName,
-            $this->mediaId . '.' . $extension,
+            $saveName,
             $this->alwaysCopy,
             $this->cloned
         );
@@ -723,24 +743,24 @@ class Media implements \JsonSerializable
             if ($this->cloned) {
                 $this->getLog()->debug('Copying cloned file');
                 // Copy the file into the library
-                if (!@copy($libraryFolder . $this->fileName, $libraryFolder . $this->mediaId . '.' . $extension))
+                if (!@copy($libraryFolder . $this->fileName, $libraryFolder . $saveName))
                     throw new ConfigurationException(__('Problem copying file in the Library Folder'));
 
             } else {
                 $this->getLog()->debug('Moving temporary file');
                 // Move the file into the library
-                if (!@rename($libraryFolder . 'temp/' . $this->fileName, $libraryFolder . $this->mediaId . '.' . $extension))
+                if (!@rename($libraryFolder . 'temp/' . $this->fileName, $libraryFolder . $saveName))
                     throw new ConfigurationException(__('Problem moving uploaded file into the Library Folder'));
             }
 
             // Set the storedAs
-            $this->storedAs = $this->mediaId . '.' . $extension;
+            $this->storedAs = $saveName;
         }
         else {
             // We have pre-defined where we want this to be stored
             if (empty($this->storedAs)) {
                 // Assume we want to set this automatically (i.e. we are set to always copy)
-                $this->storedAs = $this->mediaId . '.' . $extension;
+                $this->storedAs = $saveName;
             }
 
             if ($this->isRemote) {
